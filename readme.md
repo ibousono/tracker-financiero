@@ -5,7 +5,6 @@ Aplicación de seguimiento financiero personal desarrollada en Python con interf
 ## Requisitos
 
 - Python 3.8 o superior
-- Tkinter (viene con Python)
 
 ## Instalación
 
