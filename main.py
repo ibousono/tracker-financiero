@@ -76,6 +76,18 @@ class AplicacionFinanciera:
         )
         btn_agregar.grid(row=3, column=0, columnspan=3, pady=10)
 
+
+        # Boton para borrar
+        btn_borrar = tk.Button(
+            frame_ingreso,
+            text="❌ Borrar Registro",
+            command=self.borrar_registro,
+            bg="#E74C3C",
+            fg="white",
+            font=("Arial", 10, "bold")
+        )
+        btn_borrar.grid(row=4, column=0, columnspan=3, pady=10)
+
         # Boton calendario
         btn_calendario = tk.Button(
             frame_ingreso,
@@ -167,6 +179,29 @@ class AplicacionFinanciera:
             
         except ValueError as e:
             messagebox.showerror("Error", "❌ Por favor, ingresa datos válidos")
+
+    def borrar_registro(self):
+        """Borra el registro seleccionado"""
+        seleccion = self.tabla.selection()
+        if not seleccion:
+            messagebox.showwarning("Advertencia", "⚠️ Por favor, selecciona un registro para borrar")
+            return
+        
+        indice = self.tabla.index(seleccion[0])
+        
+        # Confirmar borrado
+        confirmar = messagebox.askyesno("Confirmar", "¿Estás seguro de que deseas borrar este registro?")
+        if confirmar:
+            # Borrar del listado de datos
+            del self.datos[indice]
+            
+            # Guardar en archivo
+            self.guardar_datos()
+            
+            # Actualizar tabla y estadísticas
+            self.actualizar_tabla()
+            self.actualizar_estadisticas()
+            
     
     def actualizar_tabla(self):
         """Actualiza la tabla con los datos actuales"""
