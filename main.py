@@ -75,6 +75,17 @@ class AplicacionFinanciera:
             font=("Arial", 10, "bold")
         )
         btn_agregar.grid(row=3, column=0, columnspan=3, pady=10)
+
+        # Boton calendario
+        btn_calendario = tk.Button(
+            frame_ingreso,
+            text="📅 Ver Calendario",
+            command=self.mostrar_calendario,
+            bg="#9B59B6",
+            fg="white",
+            font=("Arial", 10, "bold")
+        )
+        btn_calendario.grid(row=3, column=3, columnspan=2, pady=10, padx=10)
         
         # Frame para mostrar datos
         frame_datos = tk.Frame(self.ventana)
@@ -255,6 +266,74 @@ class AplicacionFinanciera:
         self.lbl_promedio.config(text=f"Promedio diario: ${promedio:.2f}", fg=color_promedio)
         
         self.lbl_dias.config(text=f"Días registrados: {dias}")
+
+    def mostrar_calendario(self):
+        """Muestra un calendario con las ganancias"""
+        calendario_ventana = tk.Toplevel(self.ventana)
+        calendario_ventana.title("Calendario de Ganancias")
+        calendario_ventana.geometry("600x400")
+        
+        # Título
+        tk.Label(
+            calendario_ventana,
+            text="📅 Calendario de Ganancias",
+            font=("Arial", 16, "bold")
+        ).pack(pady=10)
+        
+        # Frame para el calendario
+        frame_calendario = tk.Frame(calendario_ventana)
+        frame_calendario.pack(pady=10, padx=20, fill="both", expand=True)
+        
+        # Organizar datos por fecha
+        datos_por_fecha = {}
+        for registro in self.datos:
+            fecha = registro["fecha"]
+            if fecha not in datos_por_fecha:
+                datos_por_fecha[fecha] = []
+            datos_por_fecha[fecha].append(registro)
+        
+        # Mostrar fechas con ganancias
+        for fecha, registros in sorted(datos_por_fecha.items(), reverse=True)[:30]:  # Últimos 30 días
+            total_dia = sum(r["monto"] for r in registros)
+            
+            # Determinar color
+            if total_dia > 0:
+                color = self.color_positivo
+                emoji = "💰"
+            elif total_dia < 0:
+                color = self.color_negativo
+                emoji = "🔴"
+            else:
+                color = self.color_neutro
+                emoji = "⚪"
+            
+            # Crear etiqueta para el día
+            dia_frame = tk.Frame(frame_calendario)
+            dia_frame.pack(fill="x", pady=2)
+            
+            tk.Label(
+                dia_frame,
+                text=f"{emoji} {fecha}",
+                width=15,
+                anchor="w"
+            ).pack(side="left")
+            
+            tk.Label(
+                dia_frame,
+                text=f"${total_dia:+.2f}",
+                fg=color,
+                font=("Arial", 10, "bold")
+            ).pack(side="left", padx=10)
+            
+            # Mostrar detalles al pasar el mouse
+            detalles = ", ".join([f"${r['monto']} {r['moneda']}" for r in registros])
+            tk.Label(
+                dia_frame,
+                text=f"({detalles})",
+                fg="#7F8C8D",
+                font=("Arial", 8)
+            ).pack(side="left")
+
     
     def ejecutar(self):
         """Ejecuta la aplicación"""
