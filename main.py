@@ -241,7 +241,6 @@ class AplicacionFinanciera:
         """Ejecuta la aplicación"""
         self.ventana.mainloop()
 
-# Crear y ejecutar la aplicación
 if __name__ == "__main__":
     app = AplicacionFinanciera()
     app.ejecutar()
