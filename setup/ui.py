@@ -44,7 +44,7 @@ def crear_interfaz(self):
             fg="white",
             font=("Arial", 10, "bold")
         )
-        btn_agregar.grid(row=3, column=0, columnspan=3, pady=10)
+        btn_agregar.grid(row=3, column=0, columnspan=2, pady=10, padx=5, sticky="ew")
 
 
         # Boton para borrar
@@ -56,7 +56,8 @@ def crear_interfaz(self):
             fg="white",
             font=("Arial", 10, "bold")
         )
-        btn_borrar.grid(row=4, column=0, columnspan=3, pady=10)
+        btn_borrar.grid(row=3, column=2, columnspan=2, pady=10, padx=5, sticky="ew")
+
 
         # Boton calendario
         btn_calendario = tk.Button(
@@ -67,7 +68,7 @@ def crear_interfaz(self):
             fg="white",
             font=("Arial", 10, "bold")
         )
-        btn_calendario.grid(row=3, column=3, columnspan=2, pady=10, padx=10)
+        btn_calendario.grid(row=3, column=4, columnspan=2, pady=10, padx=5, sticky="ew")
         
         # Frame para mostrar datos
         frame_datos = tk.Frame(self.ventana)

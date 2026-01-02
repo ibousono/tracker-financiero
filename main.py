@@ -51,6 +51,8 @@ class AplicacionFinanciera:
 
     def borrar_registro(self):
         """Borra el registro seleccionado"""
+
+        # self.tabla.selection() devuelve una tupla con los items seleccionados
         seleccion = self.tabla.selection()
         if not seleccion:
             messagebox.showwarning("Advertencia", "⚠️ Por favor, selecciona un registro para borrar")
