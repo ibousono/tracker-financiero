@@ -12,3 +12,4 @@ Aplicación de seguimiento financiero personal desarrollada en Python con interf
 ```bash
 git clone https://github.com/tu-usuario/tracker-financiero.git
 cd tracker-financiero
+python3 main.py
