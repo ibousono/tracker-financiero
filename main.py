@@ -172,71 +172,194 @@ class AplicacionFinanciera:
         self.lbl_dias.config(text=f"Días registrados: {dias}")
 
     def mostrar_calendario(self):
-        """Muestra un calendario con las ganancias"""
+        """Muestra un calendario mensual con las ganancias por día"""
         calendario_ventana = tk.Toplevel(self.ventana)
-        calendario_ventana.title("Calendario de Ganancias")
-        calendario_ventana.geometry("600x400")
+        calendario_ventana.title("Calendario Mensual de Ganancias")
+        calendario_ventana.geometry("800x600")
         
-        # Título
-        tk.Label(
-            calendario_ventana,
-            text="📅 Calendario de Ganancias",
+        # Frame principal
+        main_frame = tk.Frame(calendario_ventana)
+        main_frame.pack(fill="both", expand=True, padx=10, pady=10)
+        
+        # Título con mes y año
+        titulo_frame = tk.Frame(main_frame)
+        titulo_frame.pack(fill="x", pady=(0, 10))
+        
+        # Botones para navegar entre meses
+        btn_anterior = tk.Button(titulo_frame, text="←", font=("Arial", 12))
+        btn_anterior.pack(side="left", padx=5)
+        
+        self.mes_calendario = tk.StringVar(value=datetime.now().strftime("%Y-%m"))
+        lbl_mes = tk.Label(
+            titulo_frame,
+            textvariable=self.mes_calendario,
             font=("Arial", 16, "bold")
-        ).pack(pady=10)
+        )
+        lbl_mes.pack(side="left", expand=True)
+        
+        btn_siguiente = tk.Button(titulo_frame, text="→", font=("Arial", 12))
+        btn_siguiente.pack(side="left", padx=5)
         
         # Frame para el calendario
-        frame_calendario = tk.Frame(calendario_ventana)
-        frame_calendario.pack(pady=10, padx=20, fill="both", expand=True)
+        frame_calendario = tk.Frame(main_frame)
+        frame_calendario.pack(fill="both", expand=True)
         
         # Organizar datos por fecha
-        datos_por_fecha = {}
+        self.datos_por_fecha = {}
         for registro in self.datos:
             fecha = registro["fecha"]
-            if fecha not in datos_por_fecha:
-                datos_por_fecha[fecha] = []
-            datos_por_fecha[fecha].append(registro)
+            if fecha not in self.datos_por_fecha:
+                self.datos_por_fecha[fecha] = []
+            self.datos_por_fecha[fecha].append(registro)
         
-        # Mostrar fechas con ganancias
-        for fecha, registros in sorted(datos_por_fecha.items(), reverse=True)[:30]:  # Últimos 30 días
-            total_dia = sum(r["monto"] for r in registros)
-            
-            # Determinar color
-            if total_dia > 0:
-                color = self.color_positivo
-                emoji = "💰"
-            elif total_dia < 0:
-                color = self.color_negativo
-                emoji = "🔴"
-            else:
-                color = self.color_neutro
-                emoji = "⚪"
-            
-            # Crear etiqueta para el día
-            dia_frame = tk.Frame(frame_calendario)
-            dia_frame.pack(fill="x", pady=2)
-            
-            tk.Label(
-                dia_frame,
-                text=f"{emoji} {fecha}",
+        # Crear encabezados de días de la semana
+        dias_semana = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"]
+        for i, dia in enumerate(dias_semana):
+            lbl_dia = tk.Label(
+                frame_calendario,
+                text=dia,
+                font=("Arial", 10, "bold"),
+                bg="#3498DB",
+                fg="white",
+                relief="raised",
                 width=15,
-                anchor="w"
-            ).pack(side="left")
+                height=2
+            )
+            lbl_dia.grid(row=0, column=i, sticky="nsew", padx=1, pady=1)
+        
+        # Hacer que las columnas se expandan uniformemente
+        for i in range(7):
+            frame_calendario.columnconfigure(i, weight=1)
+        
+        # Mostrar el mes actual
+        self.actualizar_calendario(frame_calendario, btn_anterior, btn_siguiente)
+        
+        # Asignar comandos a los botones
+        btn_anterior.config(command=lambda: self.cambiar_mes(frame_calendario, btn_anterior, btn_siguiente, -1))
+        btn_siguiente.config(command=lambda: self.cambiar_mes(frame_calendario, btn_anterior, btn_siguiente, 1))
+    
+    def actualizar_calendario(self, frame_calendario, btn_anterior, btn_siguiente):
+        """Actualiza el calendario con el mes actual"""
+        # Limpiar el frame del calendario (excepto los encabezados)
+        for widget in frame_calendario.winfo_children():
+            if widget.grid_info()["row"] > 0:
+                widget.destroy()
+        
+        # Obtener el año y mes actual
+        ano_mes = self.mes_calendario.get()
+        ano, mes = map(int, ano_mes.split("-"))
+        
+        # Obtener el primer día del mes y el número de días
+        import calendar
+        primer_dia = calendar.monthrange(ano, mes)[0]
+        num_dias = calendar.monthrange(ano, mes)[1]
+        
+        # Llenar el calendario
+        fila = 1
+        columna = primer_dia  # 0=Lunes, 1=Martes, etc.
+        
+        for dia in range(1, num_dias + 1):
+            fecha_str = f"{ano}-{mes:02d}-{dia:02d}"
             
-            tk.Label(
-                dia_frame,
-                text=f"${total_dia:+.2f}",
-                fg=color,
-                font=("Arial", 10, "bold")
-            ).pack(side="left", padx=10)
+            # Crear frame para el día
+            dia_frame = tk.Frame(
+                frame_calendario,
+                relief="solid",
+                borderwidth=1,
+                bg="white"
+            )
+            dia_frame.grid(row=fila, column=columna, sticky="nsew", padx=1, pady=1)
             
-            # Mostrar detalles al pasar el mouse
-            detalles = ", ".join([f"${r['monto']} {r['moneda']}" for r in registros])
-            tk.Label(
+            # Número del día
+            lbl_numero = tk.Label(
                 dia_frame,
-                text=f"({detalles})",
-                fg="#7F8C8D",
-                font=("Arial", 8)
-            ).pack(side="left")
+                text=str(dia),
+                font=("Arial", 10, "bold"),
+                bg="white"
+            )
+            lbl_numero.pack(anchor="nw", padx=2, pady=2)
+            
+            # Mostrar ganancias si hay datos para este día
+            if fecha_str in self.datos_por_fecha:
+                total_dia = sum(r["monto"] for r in self.datos_por_fecha[fecha_str])
+                
+                # Determinar color y emoji
+                if total_dia > 0:
+                    color = self.color_positivo
+                    emoji = "💰"
+                    texto = f"{emoji} +${total_dia:.2f}"
+                elif total_dia < 0:
+                    color = self.color_negativo
+                    emoji = "🔴"
+                    texto = f"{emoji} -${abs(total_dia):.2f}"
+                else:
+                    color = self.color_neutro
+                    emoji = "⚪"
+                    texto = f"{emoji} ${total_dia:.2f}"
+                
+                # Etiqueta con el total
+                lbl_total = tk.Label(
+                    dia_frame,
+                    text=texto,
+                    font=("Arial", 8),
+                    fg=color,
+                    bg="white"
+                )
+                lbl_total.pack(fill="x", padx=2)
+                
+                # Tooltip con detalles
+                detalles = "\n".join([f"${r['monto']:+.2f} {r['moneda']}" for r in self.datos_por_fecha[fecha_str]])
+                
+                def crear_tooltip(widget, texto_detalles, fecha=fecha_str):
+                    tooltip = tk.Toplevel(widget.winfo_toplevel())
+                    tooltip.wm_overrideredirect(True)
+                    tooltip.wm_geometry(f"+{widget.winfo_rootx()+20}+{widget.winfo_rooty()+20}")
+                    
+                    label = tk.Label(
+                        tooltip,
+                        text=f"{fecha}\n{texto_detalles}",
+                        background="lightyellow",
+                        relief="solid",
+                        borderwidth=1,
+                        font=("Arial", 9),
+                        padx=5,
+                        pady=5
+                    )
+                    label.pack()
+                    
+                    # Hacer que el tooltip desaparezca después de un tiempo
+                    tooltip.after(3000, tooltip.destroy)
+                
+                # Asignar eventos para el tooltip
+                dia_frame.bind("<Enter>", lambda e, w=dia_frame, d=detalles, f=fecha_str: crear_tooltip(w, d, f))
+            
+            # Ajustar posición para el siguiente día
+            columna += 1
+            if columna > 6:
+                columna = 0
+                fila += 1
+        
+        # Hacer que todas las filas se expandan uniformemente
+        for i in range(1, fila + 1):
+            frame_calendario.rowconfigure(i, weight=1)
+    
+    def cambiar_mes(self, frame_calendario, btn_anterior, btn_siguiente, delta):
+        """Cambia el mes en el calendario"""
+        ano_mes_actual = self.mes_calendario.get()
+        ano, mes = map(int, ano_mes_actual.split("-"))
+        
+        # Calcular nuevo mes
+        mes += delta
+        if mes > 12:
+            mes = 1
+            ano += 1
+        elif mes < 1:
+            mes = 12
+            ano -= 1
+        
+        # Actualizar variable y calendario
+        self.mes_calendario.set(f"{ano}-{mes:02d}")
+        self.actualizar_calendario(frame_calendario, btn_anterior, btn_siguiente)
 
     
     def ejecutar(self):
