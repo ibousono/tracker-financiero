@@ -1,108 +1,288 @@
-
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, font
 from datetime import datetime
 
-
 def crear_interfaz(self):
-        """Crea todos los elementos de la interfaz"""
+    """Crea todos los elementos de la interfaz con diseño moderno"""
+    
+    # Frame principal con gradiente visual
+    main_container = tk.Frame(self.ventana, bg=self.color_fondo)
+    main_container.pack(fill="both", expand=True, padx=0, pady=0)
+    
+    # Header con gradiente visual
+    header_frame = tk.Frame(
+        main_container,
+        bg=self.color_fondo_secundario,
+        height=80
+    )
+    header_frame.pack(fill="x", pady=(0, 20))
+    header_frame.pack_propagate(False)
+    
+    # Título moderno
+    titulo = tk.Label(
+        header_frame,
+        text="💰 TRACKER FINANCIERO",
+        font=("Segoe UI", 24, "bold"),
+        fg=self.color_texto,
+        bg=self.color_fondo_secundario
+    )
+    titulo.pack(side="left", padx=30, pady=20)
+    
+    # Subtítulo
+    subtitulo = tk.Label(
+        header_frame,
+        text="Controla tus ingresos y gastos",
+        font=("Segoe UI", 12),
+        fg=self.color_texto_secundario,
+        bg=self.color_fondo_secundario
+    )
+    subtitulo.pack(side="left", padx=(0, 30), pady=20)
+    
+    # Widget de la fecha actual
+    fecha_actual = datetime.now().strftime("%d %b, %Y")
+    fecha_label = tk.Label(
+        header_frame,
+        text=f"📅 {fecha_actual}",
+        font=("Segoe UI", 10),
+        fg=self.color_acento,
+        bg=self.color_fondo_secundario,
+        padx=15,
+        pady=5,
+        relief="flat",
+        borderwidth=0
+    )
+    fecha_label.pack(side="right", padx=30, pady=20)
+    
+    # Contenedor principal con dos columnas
+    contenido_frame = tk.Frame(main_container, bg=self.color_fondo)
+    contenido_frame.pack(fill="both", expand=True, padx=30, pady=(0, 30))
+    
+    # Columna izquierda - Panel de entrada
+    columna_izquierda = tk.Frame(contenido_frame, bg=self.color_fondo)
+    columna_izquierda.pack(side="left", fill="y", padx=(0, 20))
+    
+    # Panel de entrada de datos
+    panel_entrada = tk.Frame(
+        columna_izquierda,
+        bg=self.color_fondo_secundario,
+        relief="flat",
+        highlightbackground=self.color_borde,
+        highlightthickness=1,
+        padx=25,
+        pady=25
+    )
+    panel_entrada.pack(fill="y", pady=(0, 20))
+    
+    # Título del panel
+    tk.Label(
+        panel_entrada,
+        text="NUEVO REGISTRO",
+        font=("Segoe UI", 14, "bold"),
+        fg=self.color_acento,
+        bg=self.color_fondo_secundario
+    ).pack(anchor="w", pady=(0, 20))
+    
+    # Campos de entrada con diseño moderno
+    campos = [
+        ("📅 Fecha", "entrada_fecha", datetime.now().strftime("%Y-%m-%d")),
+        ("💰 Monto", "entrada_monto", "")
+    ]
+    
+    for i, (texto, attr_name, valor_default) in enumerate(campos):
+        # Frame para cada campo
+        campo_frame = tk.Frame(panel_entrada, bg=self.color_fondo_secundario)
+        campo_frame.pack(fill="x", pady=8)
         
-        # Título
-        titulo = tk.Label(
-            self.ventana,
-            text="💰 TRACKER FINANCIERO PERSONAL",
-            font=("Arial", 20, "bold"),
-            fg="#2C3E50"
+        # Etiqueta
+        tk.Label(
+            campo_frame,
+            text=texto,
+            font=("Segoe UI", 11),
+            fg=self.color_texto_secundario,
+            bg=self.color_fondo_secundario,
+            width=15,
+            anchor="w"
+        ).pack(side="left")
+        
+        # Campo de entrada
+        entrada = tk.Entry(
+            campo_frame,
+            font=("Segoe UI", 11),
+            bg=self.color_fondo_terciario,
+            fg=self.color_texto,
+            relief="flat",
+            insertbackground=self.color_texto,
+            borderwidth=0,
+            width=20
         )
-        titulo.pack(pady=20)
+        entrada.pack(side="left", fill="x", expand=True, padx=(10, 0))
+        entrada.insert(0, valor_default)
         
-        # Frame para ingresar datos
-        frame_ingreso = tk.Frame(self.ventana, bg="#ECF0F1", padx=20, pady=20)
-        frame_ingreso.pack(pady=10, fill="x")
+        # Asignar a la instancia
+        setattr(self, attr_name, entrada)
         
-        # Etiquetas y campos de entrada
-        tk.Label(frame_ingreso, text="Fecha (YYYY-MM-DD):", bg="#ECF0F1").grid(row=0, column=0, sticky="w")
-        self.entrada_fecha = tk.Entry(frame_ingreso, width=20)
-        self.entrada_fecha.grid(row=0, column=1, padx=5, pady=5)
-        self.entrada_fecha.insert(0, datetime.now().strftime("%Y-%m-%d"))
-        
-        tk.Label(frame_ingreso, text="Monto:", bg="#ECF0F1").grid(row=1, column=0, sticky="w")
-        self.entrada_monto = tk.Entry(frame_ingreso, width=20)
-        self.entrada_monto.grid(row=1, column=1, padx=5, pady=5)
-        
-        tk.Label(frame_ingreso, text="Moneda:", bg="#ECF0F1").grid(row=2, column=0, sticky="w")
-        self.moneda_var = tk.StringVar(value="USD")
-        tk.Radiobutton(frame_ingreso, text="USD", variable=self.moneda_var, value="USD", bg="#ECF0F1").grid(row=2, column=1, sticky="w")
-        tk.Radiobutton(frame_ingreso, text="ARS", variable=self.moneda_var, value="ARS", bg="#ECF0F1").grid(row=2, column=2, sticky="w")
-        
-        # Botón para agregar
-        btn_agregar = tk.Button(
-            frame_ingreso,
-            text="➕ Agregar Registro",
-            command=self.agregar_registro,
-            bg="#3498DB",
+        # Decoración inferior del campo
+        tk.Frame(
+            campo_frame,
+            height=2,
+            bg=self.color_borde
+        ).pack(side="left", fill="x", expand=True, padx=(10, 0))
+    
+    # Selección de moneda
+    moneda_frame = tk.Frame(panel_entrada, bg=self.color_fondo_secundario)
+    moneda_frame.pack(fill="x", pady=15)
+    
+    tk.Label(
+        moneda_frame,
+        text="💱 Moneda",
+        font=("Segoe UI", 11),
+        fg=self.color_texto_secundario,
+        bg=self.color_fondo_secundario,
+        width=15,
+        anchor="w"
+    ).pack(side="left")
+    
+    self.moneda_var = tk.StringVar(value="USD")
+    
+    # Frame para botones de radio
+    radio_frame = tk.Frame(moneda_frame, bg=self.color_fondo_secundario)
+    radio_frame.pack(side="left", fill="x", expand=True, padx=(10, 0))
+    
+    # Botones de radio personalizados
+    for moneda, texto in [("USD", "💵 USD"), ("ARS", "🇦🇷 ARS"), ("EUR", "💶 EUR")]:
+        btn = tk.Radiobutton(
+            radio_frame,
+            text=texto,
+            variable=self.moneda_var,
+            value=moneda,
+            font=("Segoe UI", 10),
+            fg=self.color_texto_secundario,
+            bg=self.color_fondo_secundario,
+            selectcolor=self.color_fondo_secundario,
+            activebackground=self.color_fondo_secundario,
+            activeforeground=self.color_acento,
+            indicatoron=0,
+            width=8,
+            relief="raised",
+            borderwidth=1
+        )
+        btn.pack(side="left", padx=(0, 10))
+    
+    # Botones de acción
+    botones_frame = tk.Frame(panel_entrada, bg=self.color_fondo_secundario)
+    botones_frame.pack(fill="x", pady=(20, 0))
+    
+    botones = [
+        ("➕ Agregar", self.agregar_registro, self.color_boton_agregar),
+        ("🗑️ Borrar", self.borrar_registro, self.color_boton_borrar),
+        ("📅 Calendario", self.mostrar_calendario, self.color_boton_calendario)
+    ]
+    
+    for texto, comando, color in botones:
+        btn = tk.Button(
+            botones_frame,
+            text=texto,
+            command=comando,
+            font=("Segoe UI", 11, "bold"),
+            bg=color,
             fg="white",
-            font=("Arial", 10, "bold")
+            relief="flat",
+            borderwidth=0,
+            padx=20,
+            pady=10,
+            cursor="hand2"
         )
-        btn_agregar.grid(row=3, column=0, columnspan=2, pady=10, padx=5, sticky="ew")
-
-
-        # Boton para borrar
-        btn_borrar = tk.Button(
-            frame_ingreso,
-            text="❌ Borrar Registro",
-            command=self.borrar_registro,
-            bg="#E74C3C",
-            fg="white",
-            font=("Arial", 10, "bold")
-        )
-        btn_borrar.grid(row=3, column=2, columnspan=2, pady=10, padx=5, sticky="ew")
-
-
-        # Boton calendario
-        btn_calendario = tk.Button(
-            frame_ingreso,
-            text="📅 Ver Calendario",
-            command=self.mostrar_calendario,
-            bg="#9B59B6",
-            fg="white",
-            font=("Arial", 10, "bold")
-        )
-        btn_calendario.grid(row=3, column=4, columnspan=2, pady=10, padx=5, sticky="ew")
+        btn.pack(side="left", fill="x", expand=True, padx=(0, 10))
         
-        # Frame para mostrar datos
-        frame_datos = tk.Frame(self.ventana)
-        frame_datos.pack(pady=20, fill="both", expand=True, padx=20)
-        
-        # Tabla para mostrar registros
-        self.tabla = ttk.Treeview(
-            frame_datos,
-            columns=("Fecha", "Monto", "Moneda", "Estado"),
-            show="headings",
-            height=15
-        )
-        
-        # Configurar columnas
-        self.tabla.heading("Fecha", text="📅 Fecha")
-        self.tabla.heading("Monto", text="💰 Monto")
-        self.tabla.heading("Moneda", text="💱 Moneda")
-        self.tabla.heading("Estado", text="📊 Estado")
-        
-        self.tabla.column("Fecha", width=150)
-        self.tabla.column("Monto", width=100)
-        self.tabla.column("Moneda", width=80)
-        self.tabla.column("Estado", width=100)
-        
-        # Scrollbar para la tabla
-        scrollbar = ttk.Scrollbar(frame_datos, orient="vertical", command=self.tabla.yview)
-        self.tabla.configure(yscrollcommand=scrollbar.set)
-        
-        # Posicionar elementos
-        self.tabla.pack(side="left", fill="both", expand=True)
-        scrollbar.pack(side="right", fill="y")
-        
-        # Cargar datos en la tabla
-        self.actualizar_tabla()
-        
-        # Estadísticas
-        self.crear_estadisticas()
+        # Efecto hover
+        btn.bind("<Enter>", lambda e, b=btn, c=color: self.on_enter(e, b, c))
+        btn.bind("<Leave>", lambda e, b=btn, c=color: self.on_leave(e, b, c))
+    
+    # Columna derecha - Tabla de datos
+    columna_derecha = tk.Frame(contenido_frame, bg=self.color_fondo)
+    columna_derecha.pack(side="left", fill="both", expand=True)
+    
+    # Panel de tabla
+    panel_tabla = tk.Frame(
+        columna_derecha,
+        bg=self.color_fondo_secundario,
+        relief="flat",
+        highlightbackground=self.color_borde,
+        highlightthickness=1
+    )
+    panel_tabla.pack(fill="both", expand=True)
+    
+    # Título del panel de tabla
+    tk.Label(
+        panel_tabla,
+        text="📊 REGISTROS RECIENTES",
+        font=("Segoe UI", 14, "bold"),
+        fg=self.color_acento,
+        bg=self.color_fondo_secundario
+    ).pack(anchor="w", padx=25, pady=(20, 10))
+    
+    # Frame para la tabla con scrollbar
+    tabla_frame = tk.Frame(panel_tabla, bg=self.color_fondo_secundario)
+    tabla_frame.pack(fill="both", expand=True, padx=20, pady=(0, 20))
+    
+    # Tabla Treeview con estilo moderno
+    self.tabla = ttk.Treeview(
+        tabla_frame,
+        columns=("Fecha", "Monto", "Moneda", "Estado"),
+        show="headings",
+        height=15
+    )
+    
+    # Configurar estilo de la tabla
+    estilo = ttk.Style()
+    estilo.theme_use("clam")
+    estilo.configure(
+        "Treeview",
+        background=self.color_fondo_terciario,
+        foreground=self.color_texto,
+        fieldbackground=self.color_fondo_terciario,
+        borderwidth=0,
+        font=("Segoe UI", 10)
+    )
+    estilo.configure(
+        "Treeview.Heading",
+        background=self.color_fondo_secundario,
+        foreground=self.color_texto,
+        relief="flat",
+        font=("Segoe UI", 11, "bold")
+    )
+    estilo.map(
+        "Treeview",
+        background=[("selected", self.color_acento)],
+        foreground=[("selected", "white")]
+    )
+    
+    # Configurar columnas
+    columnas = [
+        ("Fecha", 120, "📅"),
+        ("Monto", 100, "💰"),
+        ("Moneda", 80, "💱"),
+        ("Estado", 100, "📊")
+    ]
+    
+    for col_name, width, emoji in columnas:
+        self.tabla.heading(col_name, text=f"{emoji} {col_name}")
+        self.tabla.column(col_name, width=width, anchor="center")
+    
+    # Scrollbar personalizada
+    scrollbar = ttk.Scrollbar(
+        tabla_frame,
+        orient="vertical",
+        command=self.tabla.yview
+    )
+    self.tabla.configure(yscrollcommand=scrollbar.set)
+    
+    # Posicionar elementos
+    self.tabla.pack(side="left", fill="both", expand=True)
+    scrollbar.pack(side="right", fill="y")
+    
+    # Cargar datos en la tabla
+    self.actualizar_tabla()
+    
+    # Estadísticas
+    self.crear_estadisticas()
