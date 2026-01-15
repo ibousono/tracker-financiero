@@ -6,6 +6,8 @@ import os
 import calendar
 
 from setup.facade import configurar_app
+#Definicion de constantes
+FUENTE = "Segoe UI"
 
 class AplicacionFinanciera:
     def __init__(self):
@@ -109,7 +111,7 @@ class AplicacionFinanciera:
         tk.Label(
             stats_frame,
             text="📈 ESTADÍSTICAS",
-            font=("Segoe UI", 14, "bold"),
+            font=(FUENTE, 14, "bold"),
             fg=self.color_acento,
             bg=self.color_fondo_secundario
         ).pack(anchor="w", pady=(0, 15))
@@ -134,7 +136,7 @@ class AplicacionFinanciera:
             tk.Label(
                 metric_frame,
                 text=titulo,
-                font=("Segoe UI", 10),
+                font=(FUENTE, 10),
                 fg=self.color_texto_secundario,
                 bg=self.color_fondo_secundario
             ).pack(anchor="w", pady=(0, 5))
@@ -143,7 +145,7 @@ class AplicacionFinanciera:
             valor_label = tk.Label(
                 metric_frame,
                 text=valor_default,
-                font=("Segoe UI", 18, "bold"),
+                font=(FUENTE, 18, "bold"),
                 fg="white",
                 bg=self.color_fondo_secundario
             )
@@ -221,7 +223,7 @@ class AplicacionFinanciera:
         titulo_calendario = tk.Label(
             header_frame,
             text="📅 CALENDARIO FINANCIERO",
-            font=("Segoe UI", 16, "bold"),
+            font=(FUENTE, 16, "bold"),
             fg=self.color_acento,
             bg=self.color_fondo_secundario
         )
@@ -235,7 +237,7 @@ class AplicacionFinanciera:
         btn_anterior = tk.Button(
             controles_frame,
             text="←",
-            font=("Segoe UI", 12, "bold"),
+            font=(FUENTE, 12, "bold"),
             bg=self.color_boton_neutral,
             fg="white",
             relief="flat",
@@ -251,7 +253,7 @@ class AplicacionFinanciera:
         lbl_mes = tk.Label(
             controles_frame,
             textvariable=self.mes_calendario,
-            font=("Segoe UI", 14, "bold"),
+            font=(FUENTE, 14, "bold"),
             fg=self.color_texto,
             bg=self.color_fondo_secundario
         )
@@ -261,7 +263,7 @@ class AplicacionFinanciera:
         btn_siguiente = tk.Button(
             controles_frame,
             text="→",
-            font=("Segoe UI", 12, "bold"),
+            font=(FUENTE, 12, "bold"),
             bg=self.color_boton_neutral,
             fg="white",
             relief="flat",
@@ -305,7 +307,7 @@ class AplicacionFinanciera:
             lbl_dia = tk.Label(
                 header_dias_frame,
                 text=dia,
-                font=("Segoe UI", 10, "bold"),
+                font=(FUENTE, 10, "bold"),
                 bg=self.color_fondo_secundario,
                 fg=self.color_texto_secundario,
                 width=12,
@@ -358,7 +360,7 @@ class AplicacionFinanciera:
             tk.Label(
                 leyenda_item,
                 text=texto,
-                font=("Segoe UI", 9),
+                font=(FUENTE, 9),
                 fg=self.color_texto_secundario,
                 bg=self.color_fondo
             ).pack(side="left")
@@ -456,7 +458,7 @@ class AplicacionFinanciera:
             lbl_numero = tk.Label(
                 dia_frame,
                 text=str(dia),
-                font=("Segoe UI", 10, "bold"),
+                font=(FUENTE, 10, "bold"),
                 bg=bg_color,
                 fg=numero_color
             )
@@ -484,7 +486,7 @@ class AplicacionFinanciera:
                 lbl_total = tk.Label(
                     dia_frame,
                     text=texto,
-                    font=("Segoe UI", 9, "bold"),
+                    font=(FUENTE, 9, "bold"),
                     fg=color,
                     bg=bg_color
                 )
@@ -516,7 +518,7 @@ class AplicacionFinanciera:
                     tk.Label(
                         frame_tooltip,
                         text=f"📅 {fecha}",
-                        font=("Segoe UI", 10, "bold"),
+                        font=(FUENTE, 10, "bold"),
                         bg=self.color_fondo_terciario,
                         fg=self.color_texto
                     ).pack(padx=10, pady=(5, 0))
@@ -526,7 +528,7 @@ class AplicacionFinanciera:
                     tk.Label(
                         frame_tooltip,
                         text=f"Total: ${total:+.2f}",
-                        font=("Segoe UI", 11, "bold"),
+                        font=(FUENTE, 11, "bold"),
                         bg=self.color_fondo_terciario,
                         fg=color_total
                     ).pack(padx=10, pady=(2, 5))
@@ -543,7 +545,7 @@ class AplicacionFinanciera:
                         tk.Label(
                             frame_tooltip,
                             text="Transacciones:",
-                            font=("Segoe UI", 9),
+                            font=(FUENTE, 9),
                             bg=self.color_fondo_terciario,
                             fg=self.color_texto_secundario
                         ).pack(padx=10, pady=(5, 0))
@@ -553,7 +555,7 @@ class AplicacionFinanciera:
                             tk.Label(
                                 frame_tooltip,
                                 text=f"  ${r['monto']:+.2f} {r['moneda']}",
-                                font=("Segoe UI", 9),
+                                font=(FUENTE, 9),
                                 bg=self.color_fondo_terciario,
                                 fg=color_trans
                             ).pack(anchor="w", padx=20, pady=1)
@@ -706,7 +708,7 @@ class AplicacionFinanciera:
         tk.Label(
             main_frame,
             text="⚙️ CONFIGURAR BALANCE",
-            font=("Segoe UI", 16, "bold"),
+            font=(FUENTE, 16, "bold"),
             fg=self.color_acento,
             bg=self.color_fondo
         ).pack(pady=(0, 25))
@@ -715,7 +717,7 @@ class AplicacionFinanciera:
         tk.Label(
             main_frame,
             text="📊 BALANCE TOTAL ACTUAL",
-            font=("Segoe UI", 12, "bold"),
+            font=(FUENTE, 12, "bold"),
             fg=self.color_texto,
             bg=self.color_fondo
         ).pack(anchor="w", pady=(0, 10))
@@ -757,7 +759,7 @@ class AplicacionFinanciera:
         tk.Label(
             balances_frame,
             text="Balance inicial:",
-            font=("Segoe UI", 10),
+            font=(FUENTE, 10),
             fg=self.color_texto_secundario,
             bg=self.color_fondo_secundario
         ).pack(anchor="w")
@@ -765,7 +767,7 @@ class AplicacionFinanciera:
         tk.Label(
             balances_frame,
             text=f"${balance_inicial:+,.2f} {moneda_actual}",
-            font=("Segoe UI", 11),
+            font=(FUENTE, 11),
             fg=self.color_texto_secundario,
             bg=self.color_fondo_secundario
         ).pack(anchor="w", pady=(2, 10))
@@ -774,7 +776,7 @@ class AplicacionFinanciera:
         tk.Label(
             balances_frame,
             text=f"Transacciones ({len(self.datos)}):",
-            font=("Segoe UI", 10),
+            font=(FUENTE, 10),
             fg=self.color_texto_secundario,
             bg=self.color_fondo_secundario
         ).pack(anchor="w")
@@ -783,7 +785,7 @@ class AplicacionFinanciera:
         tk.Label(
             balances_frame,
             text=f"${total_transacciones:+,.2f} {moneda_actual}",
-            font=("Segoe UI", 11),
+            font=(FUENTE, 11),
             fg=color_transacciones,
             bg=self.color_fondo_secundario
         ).pack(anchor="w", pady=(2, 10))
@@ -799,7 +801,7 @@ class AplicacionFinanciera:
         tk.Label(
             balances_frame,
             text="Balance total actual:",
-            font=("Segoe UI", 11, "bold"),
+            font=(FUENTE, 11, "bold"),
             fg=self.color_texto,
             bg=self.color_fondo_secundario
         ).pack(anchor="w")
@@ -808,7 +810,7 @@ class AplicacionFinanciera:
         tk.Label(
             balances_frame,
             text=f"${balance_total_actual:+,.2f} {moneda_actual}",
-            font=("Segoe UI", 16, "bold"),
+            font=(FUENTE, 16, "bold"),
             fg=color_total,
             bg=self.color_fondo_secundario
         ).pack(anchor="w", pady=(5, 0))
@@ -817,7 +819,7 @@ class AplicacionFinanciera:
         tk.Label(
             main_frame,
             text="⚙️ CONFIGURAR NUEVO BALANCE INICIAL",
-            font=("Segoe UI", 12, "bold"),
+            font=(FUENTE, 12, "bold"),
             fg=self.color_texto,
             bg=self.color_fondo
         ).pack(anchor="w", pady=(20, 10))
@@ -830,7 +832,7 @@ class AplicacionFinanciera:
         tk.Label(
             new_frame,
             text="Tu moneda principal:",
-            font=("Segoe UI", 11),
+            font=(FUENTE, 11),
             fg=self.color_texto_secundario,
             bg=self.color_fondo
         ).pack(anchor="w", pady=(5, 10))
@@ -849,7 +851,7 @@ class AplicacionFinanciera:
                 text=texto,
                 variable=moneda_principal_var,
                 value=moneda,
-                font=("Segoe UI", 10),
+                font=(FUENTE, 10),
                 fg=self.color_texto_secundario,
                 bg=self.color_fondo,
                 selectcolor=self.color_fondo,
@@ -866,7 +868,7 @@ class AplicacionFinanciera:
         tk.Label(
             new_frame,
             text="Nuevo balance inicial:",
-            font=("Segoe UI", 11),
+            font=(FUENTE, 11),
             fg=self.color_texto_secundario,
             bg=self.color_fondo
         ).pack(anchor="w", pady=(5, 10))
@@ -880,7 +882,7 @@ class AplicacionFinanciera:
         nuevo_balance_entry = tk.Entry(
             entrada_frame,
             textvariable=nuevo_balance_var,
-            font=("Segoe UI", 14),
+            font=(FUENTE, 14),
             bg=self.color_fondo_terciario,
             fg=self.color_texto,
             relief="flat",
@@ -894,7 +896,7 @@ class AplicacionFinanciera:
         moneda_label = tk.Label(
             entrada_frame,
             text=moneda_principal_var.get(),
-            font=("Segoe UI", 14),
+            font=(FUENTE, 14),
             fg=self.color_texto,
             bg=self.color_fondo
         )
@@ -904,7 +906,7 @@ class AplicacionFinanciera:
         tk.Label(
             new_frame,
             text="Este es el dinero que tienes actualmente, sin contar las transacciones.",
-            font=("Segoe UI", 9),
+            font=(FUENTE, 9),
             fg=self.color_texto_secundario,
             bg=self.color_fondo
         ).pack(anchor="w", pady=(5, 0))
@@ -962,7 +964,7 @@ class AplicacionFinanciera:
             botones_frame,
             text="💾 GUARDAR CAMBIOS",
             command=guardar_cambios,
-            font=("Segoe UI", 12, "bold"),
+            font=(FUENTE, 12, "bold"),
             bg=self.color_boton_agregar,
             fg="white",
             relief="flat",
@@ -977,7 +979,7 @@ class AplicacionFinanciera:
             botones_frame,
             text="Cancelar",
             command=config_window.destroy,
-            font=("Segoe UI", 11),
+            font=(FUENTE, 11),
             bg=self.color_fondo_terciario,
             fg=self.color_texto,
             relief="flat",
