@@ -1,4 +1,5 @@
 import json
+import os
 
 def configurarColoresYEstado(app):
     # Colores modernos para tema oscuro
@@ -25,6 +26,7 @@ def configurarColoresYEstado(app):
     app.color_boton_neutral = "#6200EE"      # Morado oscuro
     
     app.datos = cargar_datos(app)
+    app.configuracion = cargar_configuracion(app)
 
 def cargar_datos(app):
     """Carga los datos desde el archivo JSON"""
@@ -33,3 +35,36 @@ def cargar_datos(app):
             return json.load(archivo)
     except FileNotFoundError:
         return []
+
+def cargar_configuracion(app):
+    """Carga la configuración de la aplicación"""
+    config_file = "config.json"
+    config_default = {
+        "moneda_principal": "ARS",  # Moneda local por defecto
+        "balance_total": 0.0,
+        "tasa_manual_usd": 1500.0,   # Tasa manual para USD si la API falla
+        "tasa_manual_eur": 1020.0   # Tasa manual para EUR
+    }
+    
+    try:
+        if os.path.exists(config_file):
+            with open(config_file, "r") as f:
+                config = json.load(f)
+                # Asegurarse de que todas las claves existan
+                for key, value in config_default.items():
+                    if key not in config:
+                        config[key] = value
+                return config
+        else:
+            return config_default
+    except Exception as e:
+        print(f"Error cargando configuración: {e}")
+        return config_default
+
+def guardar_configuracion(app):
+    """Guarda la configuración de la aplicación"""
+    try:
+        with open("config.json", "w") as f:
+            json.dump(app.configuracion, f, indent=2)
+    except Exception as e:
+        print(f"Error guardando configuración: {e}")

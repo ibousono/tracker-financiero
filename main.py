@@ -11,11 +11,7 @@ class AplicacionFinanciera:
     def __init__(self):
         # configura la ventana, los colores y carga los datos 
         configurar_app(self)
-    
-    def configurar_estilos(self):
-        """Configura estilos adicionales para widgets"""
-        pass
-    
+
     def on_enter(self, event, widget, color):
         """Efecto hover para botones"""
         widget.config(bg=self.aumentar_brightness(color, 20))
@@ -36,13 +32,10 @@ class AplicacionFinanciera:
         # Convertir de nuevo a hex
         return '#%02x%02x%02x' % rgb
     
-    def guardar_datos(self):
-        """Guarda los datos en el archivo JSON"""
-        with open("datos.json", "w") as archivo:
-            json.dump(self.datos, archivo, indent=2)
-    
+
+    #Manejo de registros
     def agregar_registro(self):
-        """Agrega un nuevo registro"""
+        """Agrega un nuevo registro con conversión automática"""
         try:
             fecha = self.entrada_fecha.get()
             monto = float(self.entrada_monto.get())
@@ -50,6 +43,12 @@ class AplicacionFinanciera:
             
             # Validar fecha
             datetime.strptime(fecha, "%Y-%m-%d")
+            
+            # Obtener moneda principal
+            moneda_principal = self.configuracion.get("moneda_principal", "ARS")
+            
+            # Convertir a moneda principal
+            monto_convertido = self.converter.convert(monto, moneda, moneda_principal)
             
             if monto > 0:
                 estado = "POSITIVO"
@@ -62,6 +61,8 @@ class AplicacionFinanciera:
                 "fecha": fecha,
                 "monto": monto,
                 "moneda": moneda,
+                "monto_convertido": monto_convertido,
+                "moneda_principal": moneda_principal,
                 "estado": estado
             }
             
@@ -88,51 +89,10 @@ class AplicacionFinanciera:
             del self.datos[indice]
             self.aplicarCambios()
 
-    def aplicarCambios(self):
-        """Aplica los cambios: guarda datos, actualiza tabla y estadísticas"""
-        self.guardar_datos()
-        self.actualizar_tabla()
-        self.actualizar_estadisticas()
 
-    def actualizar_tabla(self):
-        """Actualiza la tabla con los datos actuales"""
-        # Limpiar tabla
-        for item in self.tabla.get_children():
-            self.tabla.delete(item)
-        
-        # Ordenar datos por fecha (más reciente primero)
-        datos_ordenados = sorted(self.datos, key=lambda x: x["fecha"], reverse=True)
-        
-        # Agregar datos a la tabla
-        for registro in datos_ordenados:
-            # Determinar color según el estado
-            tags = ()
-            if registro["monto"] > 0:
-                tags = ("positivo",)
-            elif registro["monto"] < 0:
-                tags = ("negativo",)
-            else:
-                tags = ("neutro",)
-            
-            self.tabla.insert(
-                "",
-                "end",
-                values=(
-                    registro["fecha"],
-                    f"${abs(registro['monto']):.2f}",
-                    registro["moneda"],
-                    registro["estado"]
-                ),
-                tags=tags
-            )
-        
-        # Configurar colores
-        self.tabla.tag_configure("positivo", foreground=self.color_positivo)
-        self.tabla.tag_configure("negativo", foreground=self.color_negativo)
-        self.tabla.tag_configure("neutro", foreground=self.color_neutro)
-    
+    #Panel de estadisticas (el que esta en la parte inferior)
     def crear_estadisticas(self):
-        """Crea el panel de estadísticas moderno"""
+        """Crea el panel de estadísticas"""
         # Frame para estadísticas
         stats_frame = tk.Frame(
             self.ventana,
@@ -228,8 +188,14 @@ class AplicacionFinanciera:
         color_balance = self.color_positivo if balance >= 0 else self.color_negativo
         self.lbl_balance.config(text=f"${balance:+.2f}", fg=color_balance)
 
+
+    #CALENDARIO
     def mostrar_calendario(self):
         """Muestra un calendario mensual con las ganancias por día"""
+
+        if not hasattr(self, 'tooltip_actual'):
+            self.tooltip_actual = None
+
         calendario_ventana = tk.Toplevel(self.ventana)
         calendario_ventana.title("📅 Calendario Mensual")
         calendario_ventana.geometry("900x650")
@@ -426,17 +392,17 @@ class AplicacionFinanciera:
         
         # Obtener el primer día del mes y el número de días
         import calendar
-        primer_dia = calendar.monthrange(ano, mes)[0]
-        num_dias = calendar.monthrange(ano, mes)[1]
+        primer_dia_semana, num_dias = calendar.monthrange(ano, mes)
         
-        # Ajustar primer_dia para que 0=Lunes (calendario usa 0=Lunes por defecto)
+        # Ajustar primer_dia para que 0=Lunes (calendario usa 0=Lunes por defecto en Python)
+        # calendar.monthrange devuelve: 0=Lunes, 1=Martes, ..., 6=Domingo
         
         # Llenar el calendario
         fila = 0
-        columna = primer_dia
+        columna = primer_dia_semana
         
         # Rellenar días vacíos al inicio del mes
-        for i in range(primer_dia):
+        for i in range(primer_dia_semana):
             dia_vacio = tk.Frame(
                 grid_frame,
                 bg=self.color_fondo_secundario,
@@ -444,6 +410,19 @@ class AplicacionFinanciera:
                 height=80
             )
             dia_vacio.grid(row=fila, column=i, sticky="nsew", padx=1, pady=1)
+            grid_frame.rowconfigure(fila, weight=1)
+            grid_frame.columnconfigure(i, weight=1)
+        
+        # Organizar datos por fecha (asegurarnos de que esté actualizado)
+        self.datos_por_fecha = {}
+        for registro in self.datos:
+            fecha = registro["fecha"]
+            if fecha not in self.datos_por_fecha:
+                self.datos_por_fecha[fecha] = []
+            self.datos_por_fecha[fecha].append(registro)
+        
+        # Variable para almacenar tooltips
+        self.tooltips = {}
         
         # Crear los días del mes
         for dia in range(1, num_dias + 1):
@@ -466,6 +445,7 @@ class AplicacionFinanciera:
                 highlightthickness=1
             )
             dia_frame.grid(row=fila, column=columna, sticky="nsew", padx=1, pady=1)
+            dia_frame.grid_propagate(False)
             
             # Configurar el grid para que se expanda
             grid_frame.rowconfigure(fila, weight=1)
@@ -510,10 +490,16 @@ class AplicacionFinanciera:
                 )
                 lbl_total.pack(fill="x", padx=5, pady=2)
                 
-                # Tooltip con detalles
-                detalles = "\n".join([f"${r['monto']:+.2f} {r['moneda']}" for r in self.datos_por_fecha[fecha_str]])
-                
-                def crear_tooltip(widget, fecha, texto_detalles, total):
+                # Función para crear tooltip
+                def crear_tooltip(event, fecha=fecha_str, total=total_dia, widget=dia_frame):
+                    # Destruir tooltip existente si hay uno
+                    if hasattr(self, 'tooltip_actual') and self.tooltip_actual:
+                        try:
+                            self.tooltip_actual.destroy()
+                        except:
+                            pass
+                    
+                    # Crear nuevo tooltip
                     tooltip = tk.Toplevel(widget.winfo_toplevel())
                     tooltip.wm_overrideredirect(True)
                     tooltip.wm_geometry(f"+{widget.winfo_rootx()+20}+{widget.winfo_rooty()+20}")
@@ -553,33 +539,61 @@ class AplicacionFinanciera:
                     ).pack(fill="x", padx=5, pady=2)
                     
                     # Detalles
-                    tk.Label(
-                        frame_tooltip,
-                        text="Transacciones:",
-                        font=("Segoe UI", 9),
-                        bg=self.color_fondo_terciario,
-                        fg=self.color_texto_secundario
-                    ).pack(padx=10, pady=(5, 0))
-                    
-                    for r in self.datos_por_fecha[fecha]:
-                        color_trans = self.color_positivo if r["monto"] > 0 else self.color_negativo if r["monto"] < 0 else self.color_neutro
+                    if fecha in self.datos_por_fecha:
                         tk.Label(
                             frame_tooltip,
-                            text=f"  ${r['monto']:+.2f} {r['moneda']}",
+                            text="Transacciones:",
                             font=("Segoe UI", 9),
                             bg=self.color_fondo_terciario,
-                            fg=color_trans
-                        ).pack(anchor="w", padx=20, pady=1)
+                            fg=self.color_texto_secundario
+                        ).pack(padx=10, pady=(5, 0))
+                        
+                        for r in self.datos_por_fecha[fecha]:
+                            color_trans = self.color_positivo if r["monto"] > 0 else self.color_negativo if r["monto"] < 0 else self.color_neutro
+                            tk.Label(
+                                frame_tooltip,
+                                text=f"  ${r['monto']:+.2f} {r['moneda']}",
+                                font=("Segoe UI", 9),
+                                bg=self.color_fondo_terciario,
+                                fg=color_trans
+                            ).pack(anchor="w", padx=20, pady=1)
                     
-                    # Hacer que el tooltip desaparezca después de un tiempo
-                    tooltip.after(5000, tooltip.destroy)
+                    # Guardar referencia al tooltip
+                    self.tooltip_actual = tooltip
+                    
+                    # Función para destruir tooltip
+                    def destruir_tooltip(event=None):
+                        if hasattr(self, 'tooltip_actual') and self.tooltip_actual:
+                            try:
+                                self.tooltip_actual.destroy()
+                                self.tooltip_actual = None
+                            except:
+                                pass
+                    
+                    # Configurar eventos para cerrar tooltip
+                    tooltip.bind("<Leave>", destruir_tooltip)
+                    frame_tooltip.bind("<Leave>", destruir_tooltip)
+                    
+                    # También cerrar después de 3 segundos por si acaso
+                    tooltip.after(3000, destruir_tooltip)
                 
-                # Asignar eventos para el tooltip
-                dia_frame.bind(
-                    "<Enter>", 
-                    lambda e, w=dia_frame, f=fecha_str, d=detalles, t=total_dia: 
-                    crear_tooltip(w, f, d, t)
-                )
+                # Función para ocultar tooltip
+                def ocultar_tooltip(event=None):
+                    if hasattr(self, 'tooltip_actual') and self.tooltip_actual:
+                        try:
+                            self.tooltip_actual.destroy()
+                            self.tooltip_actual = None
+                        except:
+                            pass
+                
+                # Asignar eventos al frame del día
+                dia_frame.bind("<Enter>", crear_tooltip)
+                dia_frame.bind("<Leave>", ocultar_tooltip)
+                lbl_numero.bind("<Enter>", crear_tooltip)
+                lbl_numero.bind("<Leave>", ocultar_tooltip)
+                if 'lbl_total' in locals():
+                    lbl_total.bind("<Enter>", crear_tooltip)
+                    lbl_total.bind("<Leave>", ocultar_tooltip)
             
             # Ajustar posición para el siguiente día
             columna += 1
@@ -588,15 +602,18 @@ class AplicacionFinanciera:
                 fila += 1
         
         # Rellenar días vacíos al final del mes
-        while columna < 7:
-            dia_vacio = tk.Frame(
-                grid_frame,
-                bg=self.color_fondo_secundario,
-                relief="flat",
-                height=80
-            )
-            dia_vacio.grid(row=fila, column=columna, sticky="nsew", padx=1, pady=1)
-            columna += 1
+        ultima_fila = fila
+        if columna < 7:
+            for i in range(columna, 7):
+                dia_vacio = tk.Frame(
+                    grid_frame,
+                    bg=self.color_fondo_secundario,
+                    relief="flat",
+                    height=80
+                )
+                dia_vacio.grid(row=ultima_fila, column=i, sticky="nsew", padx=1, pady=1)
+                grid_frame.rowconfigure(ultima_fila, weight=1)
+                grid_frame.columnconfigure(i, weight=1)
     
     def cambiar_mes(self, grid_frame, btn_anterior, btn_siguiente, delta):
         """Cambia el mes en el calendario"""
@@ -630,6 +647,486 @@ class AplicacionFinanciera:
         # Actualizar calendario
         self.actualizar_calendario(grid_frame, btn_anterior, btn_siguiente)
     
+
+    #Monedas y emoticones
+    def mostrar_todas_monedas(self):
+        """Muestra todas las monedas disponibles en un menú emergente"""
+        if not hasattr(self, 'converter'):
+            return
+        
+        monedas = self.converter.get_all_currencies()
+        
+        menu = tk.Menu(self.ventana, tearoff=0, bg=self.color_fondo_secundario, fg=self.color_texto)
+        
+        for moneda in monedas:
+            emoji = self.obtener_emoji_moneda(moneda)
+            menu.add_command(
+                label=f"{emoji} {moneda}", 
+                command=lambda m=moneda: self.seleccionar_moneda(m)
+            )
+        
+        # Mostrar el menú cerca del botón
+        try:
+            menu.tk_popup(self.ventana.winfo_pointerx(), self.ventana.winfo_pointery())
+        finally:
+            menu.grab_release()
+
+    def obtener_emoji_moneda(self, moneda):
+        """Devuelve el emoji correspondiente a la moneda"""
+        emojis = {
+            "USD": "💵",
+            "ARS": "🇦🇷",
+            "EUR": "💶",
+        }
+        return emojis.get(moneda, "💱")
+
+    def seleccionar_moneda(self, moneda):
+        """Selecciona una moneda del menú"""
+        self.moneda_var.set(moneda)
+
+
+    #Esta es la ventana de configuracion del balance(la que aparece al apretar el boton de balance)
+    def mostrar_configuracion_balance(self):
+        """Muestra la ventana de configuración del balance"""
+        config_window = tk.Toplevel(self.ventana)
+        config_window.title("⚙️ Configurar Balance")
+        config_window.geometry("800x800")
+        config_window.configure(bg=self.color_fondo)
+        config_window.resizable(False, False)
+        
+        # Centrar ventana
+        config_window.transient(self.ventana)
+        config_window.grab_set()
+        
+        # Frame principal
+        main_frame = tk.Frame(config_window, bg=self.color_fondo, padx=30, pady=25)
+        main_frame.pack(fill="both", expand=True)
+        
+        # Título
+        tk.Label(
+            main_frame,
+            text="⚙️ CONFIGURAR BALANCE",
+            font=("Segoe UI", 16, "bold"),
+            fg=self.color_acento,
+            bg=self.color_fondo
+        ).pack(pady=(0, 25))
+        
+        # ===== SECCIÓN 1: BALANCE TOTAL ACTUAL =====
+        tk.Label(
+            main_frame,
+            text="📊 BALANCE TOTAL ACTUAL",
+            font=("Segoe UI", 12, "bold"),
+            fg=self.color_texto,
+            bg=self.color_fondo
+        ).pack(anchor="w", pady=(0, 10))
+        
+        # Calcular balance total actual (inicial + transacciones)
+        moneda_actual = self.configuracion.get("moneda_principal", "ARS")
+        balance_inicial = float(self.configuracion.get("balance_total", 0))
+        
+        # Calcular total de transacciones convertidas
+        total_transacciones = 0
+        for registro in self.datos:
+            monto = float(registro.get("monto", 0))
+            moneda_registro = registro.get("moneda", "USD")
+            
+            # Convertir si es necesario
+            if moneda_registro != moneda_actual:
+                if hasattr(self, 'converter'):
+                    monto_convertido = self.converter.convert(monto, moneda_registro, moneda_actual)
+                else:
+                    # Conversión simple si no hay converter
+                    tasas = {"USD": 1.0, "ARS": 950.0, "EUR": 0.92}
+                    if moneda_registro in tasas and moneda_actual in tasas:
+                        monto_convertido = monto * (tasas[moneda_actual] / tasas[moneda_registro])
+                    else:
+                        monto_convertido = monto
+            else:
+                monto_convertido = monto
+            
+            total_transacciones += monto_convertido
+        
+        # Balance total actual
+        balance_total_actual = balance_inicial + total_transacciones
+        
+        # Frame para mostrar balances
+        balances_frame = tk.Frame(main_frame, bg=self.color_fondo_secundario, padx=20, pady=15)
+        balances_frame.pack(fill="x", pady=(0, 20))
+        
+        # Balance inicial
+        tk.Label(
+            balances_frame,
+            text="Balance inicial:",
+            font=("Segoe UI", 10),
+            fg=self.color_texto_secundario,
+            bg=self.color_fondo_secundario
+        ).pack(anchor="w")
+        
+        tk.Label(
+            balances_frame,
+            text=f"${balance_inicial:+,.2f} {moneda_actual}",
+            font=("Segoe UI", 11),
+            fg=self.color_texto_secundario,
+            bg=self.color_fondo_secundario
+        ).pack(anchor="w", pady=(2, 10))
+        
+        # Transacciones
+        tk.Label(
+            balances_frame,
+            text=f"Transacciones ({len(self.datos)}):",
+            font=("Segoe UI", 10),
+            fg=self.color_texto_secundario,
+            bg=self.color_fondo_secundario
+        ).pack(anchor="w")
+        
+        color_transacciones = self.color_positivo if total_transacciones >= 0 else self.color_negativo
+        tk.Label(
+            balances_frame,
+            text=f"${total_transacciones:+,.2f} {moneda_actual}",
+            font=("Segoe UI", 11),
+            fg=color_transacciones,
+            bg=self.color_fondo_secundario
+        ).pack(anchor="w", pady=(2, 10))
+        
+        # Separador
+        tk.Frame(
+            balances_frame,
+            height=1,
+            bg=self.color_borde
+        ).pack(fill="x", pady=5)
+        
+        # Balance total actual
+        tk.Label(
+            balances_frame,
+            text="Balance total actual:",
+            font=("Segoe UI", 11, "bold"),
+            fg=self.color_texto,
+            bg=self.color_fondo_secundario
+        ).pack(anchor="w")
+        
+        color_total = self.color_positivo if balance_total_actual >= 0 else self.color_negativo
+        tk.Label(
+            balances_frame,
+            text=f"${balance_total_actual:+,.2f} {moneda_actual}",
+            font=("Segoe UI", 16, "bold"),
+            fg=color_total,
+            bg=self.color_fondo_secundario
+        ).pack(anchor="w", pady=(5, 0))
+        
+        # ===== SECCIÓN 2: CONFIGURAR NUEVO BALANCE INICIAL =====
+        tk.Label(
+            main_frame,
+            text="⚙️ CONFIGURAR NUEVO BALANCE INICIAL",
+            font=("Segoe UI", 12, "bold"),
+            fg=self.color_texto,
+            bg=self.color_fondo
+        ).pack(anchor="w", pady=(20, 10))
+        
+        # Frame para nueva configuración
+        new_frame = tk.Frame(main_frame, bg=self.color_fondo, pady=10)
+        new_frame.pack(fill="x")
+        
+        # Moneda principal
+        tk.Label(
+            new_frame,
+            text="Tu moneda principal:",
+            font=("Segoe UI", 11),
+            fg=self.color_texto_secundario,
+            bg=self.color_fondo
+        ).pack(anchor="w", pady=(5, 10))
+        
+        moneda_principal_var = tk.StringVar(value=moneda_actual)
+        
+        moneda_frame = tk.Frame(new_frame, bg=self.color_fondo)
+        moneda_frame.pack(anchor="w", fill="x", pady=(0, 20))
+        
+        # Botones de radio para moneda
+        monedas = [("USD", "💵 USD"), ("ARS", "🇦🇷 ARS"), ("EUR", "💶 EUR")]
+        
+        for moneda, texto in monedas:
+            btn = tk.Radiobutton(
+                moneda_frame,
+                text=texto,
+                variable=moneda_principal_var,
+                value=moneda,
+                font=("Segoe UI", 10),
+                fg=self.color_texto_secundario,
+                bg=self.color_fondo,
+                selectcolor=self.color_fondo,
+                activebackground=self.color_fondo,
+                activeforeground=self.color_acento,
+                indicatoron=0,
+                width=10,
+                relief="raised",
+                borderwidth=1
+            )
+            btn.pack(side="left", padx=(0, 10))
+        
+        # Nuevo balance inicial
+        tk.Label(
+            new_frame,
+            text="Nuevo balance inicial:",
+            font=("Segoe UI", 11),
+            fg=self.color_texto_secundario,
+            bg=self.color_fondo
+        ).pack(anchor="w", pady=(5, 10))
+        
+        # Frame para entrada
+        entrada_frame = tk.Frame(new_frame, bg=self.color_fondo)
+        entrada_frame.pack(anchor="w", fill="x")
+        
+        # Campo para nuevo balance
+        nuevo_balance_var = tk.StringVar()
+        nuevo_balance_entry = tk.Entry(
+            entrada_frame,
+            textvariable=nuevo_balance_var,
+            font=("Segoe UI", 14),
+            bg=self.color_fondo_terciario,
+            fg=self.color_texto,
+            relief="flat",
+            insertbackground=self.color_texto,
+            borderwidth=1,
+            width=25
+        )
+        nuevo_balance_entry.pack(side="left", padx=(0, 10))
+        
+        # Label para moneda
+        moneda_label = tk.Label(
+            entrada_frame,
+            text=moneda_principal_var.get(),
+            font=("Segoe UI", 14),
+            fg=self.color_texto,
+            bg=self.color_fondo
+        )
+        moneda_label.pack(side="left")
+        
+        # Instrucción
+        tk.Label(
+            new_frame,
+            text="Este es el dinero que tienes actualmente, sin contar las transacciones.",
+            font=("Segoe UI", 9),
+            fg=self.color_texto_secundario,
+            bg=self.color_fondo
+        ).pack(anchor="w", pady=(5, 0))
+        
+        # Función para actualizar label de moneda
+        def actualizar_moneda_label(*args):
+            moneda_label.config(text=moneda_principal_var.get())
+        
+        moneda_principal_var.trace("w", actualizar_moneda_label)
+        
+        # ===== SECCIÓN 3: BOTONES =====
+        botones_frame = tk.Frame(main_frame, bg=self.color_fondo)
+        botones_frame.pack(fill="x", pady=(25, 0))
+        
+        # Función para guardar cambios
+        def guardar_cambios():
+            try:
+                # Obtener y validar el nuevo balance
+                nuevo_balance_str = nuevo_balance_var.get()
+                if not nuevo_balance_str:
+                    messagebox.showwarning("Advertencia", "⚠️ Por favor, ingresa un valor para el balance inicial")
+                    nuevo_balance_entry.focus_set()
+                    return
+                
+                nuevo_balance = float(nuevo_balance_str)
+                moneda_principal = moneda_principal_var.get()
+                
+                # Actualizar configuración
+                self.configuracion["moneda_principal"] = moneda_principal
+                self.configuracion["balance_total"] = nuevo_balance
+                
+                # Guardar en el archivo config.json
+                try:
+                    with open("config.json", "w") as f:
+                        json.dump(self.configuracion, f, indent=2)
+                except Exception as e:
+                    messagebox.showerror("Error", f"❌ Error guardando configuración: {str(e)}")
+                    return
+                
+                # Actualizar la interfaz
+                self.actualizar_balance_total()
+                self.actualizar_tabla()
+                
+                messagebox.showinfo("Éxito", "✅ Balance inicial actualizado correctamente\n\nRecuerda: El balance total incluye este valor más todas tus transacciones.")
+                config_window.destroy()
+                
+            except ValueError:
+                messagebox.showerror("Error", "❌ Por favor, ingresa un número válido")
+                nuevo_balance_entry.focus_set()
+            except Exception as e:
+                messagebox.showerror("Error", f"❌ Error inesperado: {str(e)}")
+        
+        # Botón Guardar
+        btn_guardar = tk.Button(
+            botones_frame,
+            text="💾 GUARDAR CAMBIOS",
+            command=guardar_cambios,
+            font=("Segoe UI", 12, "bold"),
+            bg=self.color_boton_agregar,
+            fg="white",
+            relief="flat",
+            padx=30,
+            pady=12,
+            cursor="hand2"
+        )
+        btn_guardar.pack(side="left", padx=(0, 15))
+        
+        # Botón Cancelar
+        btn_cancelar = tk.Button(
+            botones_frame,
+            text="Cancelar",
+            command=config_window.destroy,
+            font=("Segoe UI", 11),
+            bg=self.color_fondo_terciario,
+            fg=self.color_texto,
+            relief="flat",
+            padx=30,
+            pady=10,
+            cursor="hand2"
+        )
+        btn_cancelar.pack(side="left")
+        
+        # Efectos hover
+        btn_guardar.bind("<Enter>", lambda e, b=btn_guardar: self.on_enter(e, b, self.color_boton_agregar))
+        btn_guardar.bind("<Leave>", lambda e, b=btn_guardar: self.on_leave(e, b, self.color_boton_agregar))
+        btn_cancelar.bind("<Enter>", lambda e, b=btn_cancelar: self.on_enter(e, b, self.color_fondo_terciario))
+        btn_cancelar.bind("<Leave>", lambda e, b=btn_cancelar: self.on_leave(e, b, self.color_fondo_terciario))
+        
+        # Poner el balance actual en el campo de entrada
+        nuevo_balance_var.set(str(balance_inicial))
+        
+        # Seleccionar todo el texto en el campo de entrada
+        nuevo_balance_entry.focus_set()
+        nuevo_balance_entry.select_range(0, tk.END)
+        
+        # También permitir guardar con Enter
+        nuevo_balance_entry.bind("<Return>", lambda e: guardar_cambios())
+
+    def actualizar_balance_total(self):
+        """Actualiza el display del balance total"""
+        if not hasattr(self, 'lbl_balance_total'):
+            return
+        
+        try:
+            # Obtener configuración actual
+            moneda_principal = self.configuracion.get("moneda_principal", "ARS")
+            balance_inicial = float(self.configuracion.get("balance_total", 0))
+            
+            # Calcular total de transacciones convertidas a la moneda principal
+            total_transacciones = 0
+            for registro in self.datos:
+                monto = float(registro.get("monto", 0))
+                moneda_registro = registro.get("moneda", "USD")
+                
+                # Convertir si las monedas son diferentes
+                if moneda_registro != moneda_principal:
+                    # Usar el convertidor si está disponible
+                    if hasattr(self, 'converter'):
+                        monto_convertido = self.converter.convert(monto, moneda_registro, moneda_principal)
+                    else:
+                        # Conversión manual simple
+                        tasas = {"USD": 1.0, "ARS": 950.0, "EUR": 0.92}
+                        if moneda_registro in tasas and moneda_principal in tasas:
+                            # Convertir a USD primero, luego a la moneda destino
+                            monto_usd = monto / tasas[moneda_registro]
+                            monto_convertido = monto_usd * tasas[moneda_principal]
+                        else:
+                            monto_convertido = monto  # Si no conocemos la tasa
+                else:
+                    monto_convertido = monto
+                
+                total_transacciones += monto_convertido
+            
+            # Calcular balance total
+            balance_total = balance_inicial + total_transacciones
+            
+            # Formatear el texto
+            if balance_total >= 0:
+                texto_balance = f"${balance_total:+,.2f} {moneda_principal}"
+                color = self.color_positivo
+            else:
+                texto_balance = f"${balance_total:+,.2f} {moneda_principal}"
+                color = self.color_negativo
+            
+            # Actualizar el label
+            self.lbl_balance_total.config(text=f"Balance: {texto_balance}", fg=color)
+            
+        except Exception as e:
+            print(f"Error en actualizar_balance_total: {e}")
+            # Mostrar valor por defecto
+            self.lbl_balance_total.config(text="Balance: $0.00 ARS", fg=self.color_acento)
+
+
+    # Refrescar tabla y guardar datos
+    def actualizar_tabla(self):
+        """Actualiza la tabla con los datos actuales incluyendo conversiones"""
+        # Limpiar tabla
+        for item in self.tabla.get_children():
+            self.tabla.delete(item)
+        
+        # Ordenar datos por fecha (más reciente primero)
+        datos_ordenados = sorted(self.datos, key=lambda x: x["fecha"], reverse=True)
+        
+        # Obtener moneda principal
+        moneda_principal = self.configuracion.get("moneda_principal", "ARS")
+        
+        # Agregar datos a la tabla
+        for registro in datos_ordenados:
+            # Determinar color según el estado
+            tags = ()
+            if registro["monto"] > 0:
+                tags = ("positivo",)
+            elif registro["monto"] < 0:
+                tags = ("negativo",)
+            else:
+                tags = ("neutro",)
+            
+            # Calcular conversión si no existe
+            if "monto_convertido" not in registro:
+                registro["monto_convertido"] = self.converter.convert(
+                    registro["monto"], 
+                    registro["moneda"], 
+                    moneda_principal
+                )
+            
+            self.tabla.insert(
+                "",
+                "end",
+                values=(
+                    registro["fecha"],
+                    f"${registro['monto']:+.2f}",
+                    registro["moneda"],
+                    f"${registro['monto_convertido']:+.2f} {moneda_principal}",
+                    registro["estado"]
+                ),
+                tags=tags
+            )
+        
+        # Configurar colores
+        self.tabla.tag_configure("positivo", foreground=self.color_positivo)
+        self.tabla.tag_configure("negativo", foreground=self.color_negativo)
+        self.tabla.tag_configure("neutro", foreground=self.color_neutro)
+        
+        # Actualizar balance total
+        self.actualizar_balance_total()
+
+    def aplicarCambios(self):
+        """Aplica los cambios: guarda datos, actualiza tabla y estadísticas"""
+        self.guardar_datos()
+        self.actualizar_tabla()
+        self.actualizar_estadisticas()
+        self.actualizar_balance_total()
+
+    def guardar_datos(self):
+        """Guarda los datos en el archivo JSON"""
+        with open("datos.json", "w") as archivo:
+            json.dump(self.datos, archivo, indent=2)
+        
+        # También guardar configuración
+        from setup.estado import guardar_configuracion
+        guardar_configuracion(self)
+        
     def ejecutar(self):
         """Ejecuta la aplicación"""
         self.ventana.mainloop()

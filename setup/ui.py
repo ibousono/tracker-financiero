@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import ttk, font
+from tkinter import ttk, font, messagebox
 from datetime import datetime
 
 def crear_interfaz(self):
@@ -38,20 +38,58 @@ def crear_interfaz(self):
     )
     subtitulo.pack(side="left", padx=(0, 30), pady=20)
     
-    # Widget de la fecha actual
-    fecha_actual = datetime.now().strftime("%d %b, %Y")
-    fecha_label = tk.Label(
-        header_frame,
+    # Widget del balance y fecha - EN LA MISMA LÍNEA
+    balance_frame = tk.Frame(header_frame, bg=self.color_fondo_secundario)
+    balance_frame.pack(side="right", padx=30, pady=20)
+    
+    # Frame para organizar balance y botón
+    info_frame = tk.Frame(balance_frame, bg=self.color_fondo_secundario)
+    info_frame.pack()
+    
+    # Fecha actual - COMPACTA
+    fecha_actual = datetime.now().strftime("%d/%m/%Y")
+    self.fecha_label = tk.Label(
+        info_frame,
         text=f"📅 {fecha_actual}",
-        font=("Segoe UI", 10),
-        fg=self.color_acento,
-        bg=self.color_fondo_secundario,
-        padx=15,
-        pady=5,
-        relief="flat",
-        borderwidth=0
+        font=("Segoe UI", 9),
+        fg=self.color_texto_secundario,
+        bg=self.color_fondo_secundario
     )
-    fecha_label.pack(side="right", padx=30, pady=20)
+    self.fecha_label.pack(anchor="e", pady=(0, 5))
+    
+    # Frame para balance y botón
+    balance_boton_frame = tk.Frame(info_frame, bg=self.color_fondo_secundario)
+    balance_boton_frame.pack(fill="x")
+    
+    # Balance total
+    self.lbl_balance_total = tk.Label(
+        balance_boton_frame,
+        text="Balance: $0.00",
+        font=("Segoe UI", 11, "bold"),
+        fg=self.color_acento,
+        bg=self.color_fondo_secundario
+    )
+    self.lbl_balance_total.pack(side="left", padx=(0, 10))
+    
+    # Botón Balance - NUEVO
+    btn_balance = tk.Button(
+        balance_boton_frame,
+        text="⚙️ Balance",
+        command=self.mostrar_configuracion_balance,
+        font=("Segoe UI", 9, "bold"),
+        bg=self.color_boton_neutral,
+        fg="white",
+        relief="flat",
+        borderwidth=0,
+        padx=12,
+        pady=6,
+        cursor="hand2"
+    )
+    btn_balance.pack(side="right")
+    
+    # Efecto hover para el botón
+    btn_balance.bind("<Enter>", lambda e, b=btn_balance: self.on_enter(e, b, self.color_boton_neutral))
+    btn_balance.bind("<Leave>", lambda e, b=btn_balance: self.on_leave(e, b, self.color_boton_neutral))
     
     # Contenedor principal con dos columnas
     contenido_frame = tk.Frame(main_container, bg=self.color_fondo)
@@ -128,7 +166,7 @@ def crear_interfaz(self):
             bg=self.color_borde
         ).pack(side="left", fill="x", expand=True, padx=(10, 0))
     
-    # Selección de moneda
+    # Selección de moneda - SOLO LAS 3 QUE QUERÉS
     moneda_frame = tk.Frame(panel_entrada, bg=self.color_fondo_secundario)
     moneda_frame.pack(fill="x", pady=15)
     
@@ -144,12 +182,18 @@ def crear_interfaz(self):
     
     self.moneda_var = tk.StringVar(value="USD")
     
-    # Frame para botones de radio
+    # Frame para botones de radio - SOLO LAS 3 MONEDAS
     radio_frame = tk.Frame(moneda_frame, bg=self.color_fondo_secundario)
     radio_frame.pack(side="left", fill="x", expand=True, padx=(10, 0))
     
-    # Botones de radio personalizados
-    for moneda, texto in [("USD", "💵 USD"), ("ARS", "🇦🇷 ARS"), ("EUR", "💶 EUR")]:
+    # SOLO USD, ARS, EUR
+    monedas_a_mostrar = [
+        ("USD", "💵 USD"),
+        ("ARS", "🇦🇷 ARS"), 
+        ("EUR", "💶 EUR")
+    ]
+    
+    for moneda, texto in monedas_a_mostrar:
         btn = tk.Radiobutton(
             radio_frame,
             text=texto,
@@ -228,7 +272,7 @@ def crear_interfaz(self):
     # Tabla Treeview con estilo moderno
     self.tabla = ttk.Treeview(
         tabla_frame,
-        columns=("Fecha", "Monto", "Moneda", "Estado"),
+        columns=("Fecha", "Monto", "Moneda", "En tu moneda", "Estado"),
         show="headings",
         height=15
     )
@@ -259,10 +303,11 @@ def crear_interfaz(self):
     
     # Configurar columnas
     columnas = [
-        ("Fecha", 120, "📅"),
+        ("Fecha", 100, "📅"),
         ("Monto", 100, "💰"),
-        ("Moneda", 80, "💱"),
-        ("Estado", 100, "📊")
+        ("Moneda", 70, "💱"),
+        ("En tu moneda", 120, "🏠"),
+        ("Estado", 90, "📊")
     ]
     
     for col_name, width, emoji in columnas:
@@ -286,3 +331,6 @@ def crear_interfaz(self):
     
     # Estadísticas
     self.crear_estadisticas()
+    
+    # Actualizar balance total
+    self.actualizar_balance_total()
